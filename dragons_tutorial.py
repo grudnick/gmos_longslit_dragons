@@ -39,6 +39,9 @@ all_files.sort()
 print(all_files)
 
 #set up lists of bias files.  Start with all files
+#The syntax for select_data is
+#select_data(inputs, tags=[], xtags=[], expression='True')
+#where tags and xtags are tags to include or exclude respectively.
 all_biases = dataselect.select_data(all_files, ['BIAS'])
 
 for bias in all_biases:
@@ -59,3 +62,50 @@ biassci = dataselect.select_data(
     [],
     dataselect.expr_parser('detector_roi_setting=="Full Frame"')
 )
+
+#select files of differen types
+#flats - The default recipe does not
+#stack the flats. This allows us to use only one list of the
+#flats. Each will be reduced individually, never interacting with the
+#others.
+flats = dataselect.select_data(all_files, ['FLAT'])
+
+#arcs - The default recipe does not stack the arcs. This allows us to use
+#only one list of arcs. Each will be reduce individually, never
+#interacting with the others.
+arcs = dataselect.select_data(all_files, ['ARC'])
+
+#If a spectrophotometric standard is recognized as such by DRAGONS, it
+#will receive the Astrodata tag STANDARD. To be recognized, the name
+#of the star must be in a lookup table. All spectrophotometric
+#standards normally used at Gemini are in that table.
+stdstar = dataselect.select_data(all_files, ['STANDARD'])
+
+#this prints all the data not flagged as a calibration file.  This
+#could include daytime calibrations with daycal flag
+all_science = dataselect.select_data(all_files, [], ['CAL'])
+for sci in all_science:
+    ad = astrodata.open(sci)
+    print(sci, '  ', ad.object())
+
+scitarget = dataselect.select_data(
+    all_files,
+    [],
+    ['CAL'],
+    dataselect.expr_parser('object=="J2145+0031"')
+)
+print('scitarget = ', scitarget)
+
+#load bad pixel maps to the database.  this has to be downloaded
+#separately from the database
+for bpm in dataselect.select_data(all_files, ['BPM']):
+    caldb.add_cal(bpm)
+
+
+#make master bias from full frames and standard frames
+reduce_biasstd = Reduce()
+reduce_biassci = Reduce()
+reduce_biasstd.files.extend(biasstd)
+reduce_biassci.files.extend(biassci)
+reduce_biasstd.runr()
+reduce_biassci.runr()
