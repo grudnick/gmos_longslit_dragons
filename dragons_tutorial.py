@@ -2,7 +2,6 @@
 
 import glob
 
-
 import astrodata
 
 import gemini_instruments
@@ -23,6 +22,14 @@ dataroot = '/Users/grudnick/Code/Dragons/Tutorials/gmosls_tutorial'
 # list the database content with caldb.list_files(), and caldb.remove_cal(<filename>) to remove a file from the database (it will not remove the file on disk.)
 
 from recipe_system import cal_service
+
+#set up which parts of the script to execute
+makebias = False
+makeflats = False
+makearcs = False
+makestd = False
+makesci = True
+
 
 caldb = cal_service.set_local_database()
 
@@ -103,12 +110,14 @@ for bpm in dataselect.select_data(all_files, ['BPM']):
 
 
 #make master bias from full frames and standard frames
-reduce_biasstd = Reduce()
-reduce_biassci = Reduce()
-reduce_biasstd.files.extend(biasstd)
-reduce_biassci.files.extend(biassci)
-reduce_biasstd.runr()
-reduce_biassci.runr()
+if makebias:
+    reduce_biasstd = Reduce()
+    reduce_biasstd.files.extend(biasstd)
+    reduce_biasstd.runr()
+
+    reduce_biassci = Reduce()
+    reduce_biassci.files.extend(biassci)
+    reduce_biassci.runr()
 
 #reduce master flat fields
 #GMOS longslit flat fields are normally obtained at night along with
@@ -120,20 +129,69 @@ reduce_biassci.runr()
 #and each will be reduce individually. When a calibration is needed,
 #in this case, a master bias, the best match will be obtained
 #automatically from the local calibration manager.
-reduce_flats = Reduce()
-reduce_flats.files.extend(flats)
+if makeflats:
 
-#The primitive normalizeFlat, used in the recipe, has an interactive
-#mode. To activate the interactive mode.  Comment out this line to not
-#run interactively
-#reduce_flats.uparms = dict([('interactive', True)])
-reduce_flats.runr()
+    reduce_flats = Reduce()
+    reduce_flats.files.extend(flats)
 
+    #The primitive normalizeFlat, used in the recipe, has an interactive
+    #mode. To activate the interactive mode.  Comment out this line to not
+    #run interactively
+    #reduce_flats.uparms = dict([('interactive', True)])
+    reduce_flats.runr()
 
 #reduce arcs.  As for spectroscopic flats, these images are not stacked
-reduce_arcs = Reduce()
-reduce_arcs.files.extend(arcs)
+if makearcs:
+    reduce_arcs = Reduce()
+    reduce_arcs.files.extend(arcs)
 
-#comment out to not run interactively
-#reduce_arcs.uparms = dict([('interactive', True)])
-reduce_arcs.runr()
+    #comment out to not run interactively
+    #reduce_arcs.uparms = dict([('interactive', True)])
+    reduce_arcs.runr()
+
+#sensitivity functiion.  This is performed at only one spectroscopic
+#dither as it has been found that differences of ~10nm does not
+#significantly affect spectrophotometric calibration
+if makestd:
+    reduce_std = Reduce()
+    reduce_std.files.extend(stdstar)
+
+    #comment out to run in non-interactive mode for all the reduction.
+    #This includes for sky subtraction and tracing the spectrum.
+    #Standards are bright so this probably won't be needed
+    #reduce_std.uparms = dict([('interactive', True)])
+
+    #this is just to do the sensitivity function interactively.
+    reduce_std.uparms = dict([('calculateSensitivity:interactive', True)])
+
+    reduce_std.runr()
+
+    #this will plot the spectrum in aperture 1
+    from gempy.adlibrary import plotting
+    import matplotlib.pyplot as plt
+
+    ad = astrodata.open(reduce_std.output_filenames[0])
+    plt.ioff()
+    plotting.dgsplot_matplotlib(ad, 1)
+    plt.ion()
+
+
+#reduce science images.
+#This makes a 2-D spectrum and an extracted 1D spectrum.  The 1D
+#spectrum is flux calibrated with the sensitivity function
+if makesci:
+    reduce_science = Reduce()
+    reduce_science.files.extend(scitarget)
+    reduce_science.runr()
+
+    display = Reduce()
+    display.files = ['S20171022S0087_2D.fits']
+    display.recipename = 'display'
+    display.runr()
+
+    from gempy.adlibrary import plotting
+    import matplotlib.pyplot as plt
+    ad = astrodata.open(reduce_science.output_filenames[0])
+    plt.ioff()
+    plotting.dgsplot_matplotlib(ad, 1)
+    plt.ion()
