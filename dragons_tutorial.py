@@ -109,3 +109,31 @@ reduce_biasstd.files.extend(biasstd)
 reduce_biassci.files.extend(biassci)
 reduce_biasstd.runr()
 reduce_biassci.runr()
+
+#reduce master flat fields
+#GMOS longslit flat fields are normally obtained at night along with
+#the observation sequence to match the telescope and instrument
+#flexure. The matching flat nearest in time to the target observation
+#is used to flat field the target
+
+#We can send all the flats, regardless of characteristics, to Reduce
+#and each will be reduce individually. When a calibration is needed,
+#in this case, a master bias, the best match will be obtained
+#automatically from the local calibration manager.
+reduce_flats = Reduce()
+reduce_flats.files.extend(flats)
+
+#The primitive normalizeFlat, used in the recipe, has an interactive
+#mode. To activate the interactive mode.  Comment out this line to not
+#run interactively
+#reduce_flats.uparms = dict([('interactive', True)])
+reduce_flats.runr()
+
+
+#reduce arcs.  As for spectroscopic flats, these images are not stacked
+reduce_arcs = Reduce()
+reduce_arcs.files.extend(arcs)
+
+#comment out to not run interactively
+#reduce_arcs.uparms = dict([('interactive', True)])
+reduce_arcs.runr()
