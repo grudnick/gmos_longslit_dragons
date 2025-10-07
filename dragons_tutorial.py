@@ -191,7 +191,7 @@ for bpm in dataselect.select_data(all_files, ['BPM']):
 
 
 #make master bias from full frames and standard frames
-if makebias:
+if makebias==True:
     print('#############################################')
     print('make master bias')
     print('#############################################')
@@ -219,9 +219,9 @@ else:
 #and each will be reduce individually. When a calibration is needed,
 #in this case, a master bias, the best match will be obtained
 #automatically from the local calibration manager.
-if makeflats:
+if makeflats==True:
     print('#############################################')
-    print('make master biasflats')
+    print('make master flats')
     print('#############################################')
 
     reduce_flats = Reduce()
@@ -229,7 +229,7 @@ if makeflats:
 
     #The primitive normalizeFlat, used in the recipe, has an interactive
     #mode. 
-    if interactive:
+    if interactive==True:
         reduce_flats.uparms = dict([('interactive', True)])
 
     reduce_flats.runr()
@@ -239,7 +239,7 @@ else:
     print('#############################################')
 
 #reduce arcs.  As for spectroscopic flats, these images are not stacked
-if makearcs:
+if makearcs==True:
     print('#############################################')
     print('make arcs and determine wavelength solution')
     print('#############################################')
@@ -247,7 +247,7 @@ if makearcs:
     reduce_arcs.files.extend(arcs)
 
     #you can use an interactive feature to fit the arcs
-    if interactive:
+    if interactive==True:
         reduce_arcs.uparms = dict([('interactive', True)])
 
     reduce_arcs.runr()
@@ -260,7 +260,7 @@ else:
 #sensitivity functiion.  This is performed at only one spectroscopic
 #dither as it has been found that differences of ~10nm does not
 #significantly affect spectrophotometric calibration
-if makestd:
+if makestd==True:
     print('#############################################')
     print('reduce standard and calculate sensitivity correction')
     print('#############################################')
@@ -274,14 +274,14 @@ if makestd:
     #reduce_std.uparms = dict([('interactive', True)])
 
     #this is just to do the sensitivity function interactively.
-    if interactive: 
+    if interactive==True: 
         reduce_std.uparms = dict([('calculateSensitivity:interactive', True)])
 
     reduce_std.runr()
 
     #this will plot the spectrum in aperture 1
     plotspec=False
-    if plotspec:
+    if plotspec==True:
         ad = astrodata.open(reduce_std.output_filenames[0])
         plt.ioff()
         plotting.dgsplot_matplotlib(ad, 1)
@@ -295,12 +295,19 @@ else:
 #reduce science images.
 #This makes a 2-D spectrum and an extracted 1D spectrum.  The 1D
 #spectrum is flux calibrated with the sensitivity function
-if makesci:
+if makesci==True:
     print('#############################################')
     print('reduce science images')
     print('#############################################')
     reduce_science = Reduce()
     reduce_science.files.extend(scitarget)
+
+    if interactive==True:
+        #reduce_science.uparms = dict([('findApertures:interactive', True)])
+        #reduce_science.uparms = dict([('skyCorrectFromSlit:interactive', True)])
+        #reduce_science.uparms = dict([('traceApertures:interactive', True)])
+        reduce_science.uparms = dict([('interactive', True)])
+        
     reduce_science.runr()
 
     display = Reduce()
@@ -309,7 +316,7 @@ if makesci:
     display.runr()
 
     plotspec=False
-    if plotspec:
+    if plotspec==True:
         ad = astrodata.open(reduce_science.output_filenames[0])
         plt.ioff()
         plotting.dgsplot_matplotlib(ad, 1)
