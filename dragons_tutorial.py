@@ -1,18 +1,15 @@
 #!/usr/bin/env python
 
 import glob
-
 import astrodata
-
 import gemini_instruments
-
 from recipe_system.reduction.coreReduce import Reduce
-
 from gempy.adlibrary import dataselect
-
 from gempy.utils import logutils
-
 import argparse
+from gempy.adlibrary import plotting
+import matplotlib.pyplot as plt
+
 
 #initialize variables that govern which parts of the script to execute
 makebias = True
@@ -20,6 +17,8 @@ makeflats = True
 makearcs = True
 makestd = True
 makesci = True
+interactive = True
+plotspec = True
 
 #parse command line options
 parser = argparse.ArgumentParser(description="This is a reduction script using Dragons for longslit spectra")
@@ -28,6 +27,8 @@ parser.add_argument("--makeflats", help="default=True; make flatfields")
 parser.add_argument("--makearcs", help="default=True; reduce arcs and determine wavelength solution")
 parser.add_argument("--makestd", help="default=True; reduce standard and make sensitivity correction")
 parser.add_argument("--makesci", help="default=True; reduce science frames and extract 1D spectrum")
+parser.add_argument("--interactive", help="default=True; perform all reductions interactively")
+parser.add_argument("--plotspec", help="default=True; plot spectra")
 
 args = parser.parse_args()
 
@@ -41,8 +42,12 @@ if args.makestd is not None:
     makestd = args.makestd
 if args.makesci is not None:
     makesci = args.makesci
+if args.interactive is not None:
+    interactive = args.interactive
+if args.makesci is not None:
+    plotspec = args.plotspec
 
-print(f"makebias={makebias}, makeflats={makeflats}, makearcs={makearcs}, makestd={makestd}, makesci={makesci}")
+print(f"makebias={makebias}, makeflats={makeflats}, makearcs={makearcs}, makestd={makestd}, makesci={makesci}, interactive={interactive}, plotspec={plotspec}")
 
 
 #this will be print to the directory in which you are working
@@ -178,9 +183,10 @@ if makeflats:
     reduce_flats.files.extend(flats)
 
     #The primitive normalizeFlat, used in the recipe, has an interactive
-    #mode. To activate the interactive mode.  Comment out this line to not
-    #run interactively
-    #reduce_flats.uparms = dict([('interactive', True)])
+    #mode. 
+    if interactive:
+        reduce_flats.uparms = dict([('interactive', True)])
+
     reduce_flats.runr()
 else:
     print('#############################################')
@@ -195,8 +201,10 @@ if makearcs:
     reduce_arcs = Reduce()
     reduce_arcs.files.extend(arcs)
 
-    #comment out to not run interactively
-    #reduce_arcs.uparms = dict([('interactive', True)])
+    #you can use an interactive feature to fit the arcs
+    if interactive:
+        reduce_arcs.uparms = dict([('interactive', True)])
+
     reduce_arcs.runr()
 else:
     print('#############################################')
@@ -221,18 +229,18 @@ if makestd:
     #reduce_std.uparms = dict([('interactive', True)])
 
     #this is just to do the sensitivity function interactively.
-    reduce_std.uparms = dict([('calculateSensitivity:interactive', True)])
+    if interactive: 
+        reduce_std.uparms = dict([('calculateSensitivity:interactive', True)])
 
     reduce_std.runr()
 
     #this will plot the spectrum in aperture 1
-    from gempy.adlibrary import plotting
-    import matplotlib.pyplot as plt
-
-    ad = astrodata.open(reduce_std.output_filenames[0])
-    plt.ioff()
-    plotting.dgsplot_matplotlib(ad, 1)
-    plt.ion()
+    plotspec=False
+    if plotspec:
+        ad = astrodata.open(reduce_std.output_filenames[0])
+        plt.ioff()
+        plotting.dgsplot_matplotlib(ad, 1)
+        plt.ion()
 else:
     print('#############################################')
     print('skip making sensitivity correction')
@@ -255,12 +263,12 @@ if makesci:
     display.recipename = 'display'
     display.runr()
 
-    from gempy.adlibrary import plotting
-    import matplotlib.pyplot as plt
-    ad = astrodata.open(reduce_science.output_filenames[0])
-    plt.ioff()
-    plotting.dgsplot_matplotlib(ad, 1)
-    plt.ion()
+    plotspec=False
+    if plotspec:
+        ad = astrodata.open(reduce_science.output_filenames[0])
+        plt.ioff()
+        plotting.dgsplot_matplotlib(ad, 1)
+        plt.ion()
 else:
     print('#############################################')
     print('skip reducing science images')
