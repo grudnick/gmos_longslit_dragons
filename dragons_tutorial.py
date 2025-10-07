@@ -1,5 +1,47 @@
 #!/usr/bin/env python
 
+
+'''
+
+Gregory Rudnick
+6-Oct-2025
+
+DESCRIPTION
+
+Python reduction script using reduce class.  Works on Dragons tutorial
+data.
+
+COMMAND LINE PARAMETERS
+
+makebias:  default=True; make master bias
+
+makeflats: default=True; make flatfields
+
+makearcs:  default=True; reduce arcs and determine wavelength solution
+
+makestd:   default=True; reduce standard and make sensitivity correction
+
+makesci:   default=True; reduce science frames and extract 1D spectrum
+
+interactive default=True; perform all reductions interactively
+
+plotspec   default=True; plot spectra
+
+INPUT
+
+You need to specify the path "dataroot" that locates the input data.
+
+EXAMPLE USAGE
+
+python dragons_tutorial.py --makebias False --makeflats True
+
+OUTPUT
+
+Reduced data will be deposited in execution directory
+
+'''
+
+
 import glob
 import astrodata
 import gemini_instruments
@@ -10,6 +52,8 @@ import argparse
 from gempy.adlibrary import plotting
 import matplotlib.pyplot as plt
 
+# This needs to be set to the root for the data. 
+dataroot = '/Users/grudnick/Code/Dragons/Tutorials/gmosls_tutorial'
 
 #initialize variables that govern which parts of the script to execute
 makebias = True
@@ -53,11 +97,12 @@ print(f"makebias={makebias}, makeflats={makeflats}, makearcs={makearcs}, makestd
 #this will be print to the directory in which you are working
 logutils.config(file_name='gmosls_tutorial.log')
 
-dataroot = '/Users/grudnick/Code/Dragons/Tutorials/gmosls_tutorial'
 
-#set up calibration services
-# You can manually add processed calibrations with caldb.add_cal(<filename>),
-# list the database content with caldb.list_files(), and caldb.remove_cal(<filename>) to remove a file from the database (it will not remove the file on disk.)
+#set up calibration services You can manually add processed
+# calibrations with caldb.add_cal(<filename>), list the database
+# content with caldb.list_files(), and caldb.remove_cal(<filename>) to
+# remove a file from the database (it will not remove the file on
+# disk.)
 
 from recipe_system import cal_service
 
