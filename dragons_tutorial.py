@@ -12,6 +12,39 @@ from gempy.adlibrary import dataselect
 
 from gempy.utils import logutils
 
+import argparse
+
+#initialize variables that govern which parts of the script to execute
+makebias = True
+makeflats = True
+makearcs = True
+makestd = True
+makesci = True
+
+#parse command line options
+parser = argparse.ArgumentParser(description="This is a reduction script using Dragons for longslit spectra")
+parser.add_argument("--makebias", help="default=True; make master bias")
+parser.add_argument("--makeflats", help="default=True; make flatfields")
+parser.add_argument("--makearcs", help="default=True; reduce arcs and determine wavelength solution")
+parser.add_argument("--makestd", help="default=True; reduce standard and make sensitivity correction")
+parser.add_argument("--makesci", help="default=True; reduce science frames and extract 1D spectrum")
+
+args = parser.parse_args()
+
+if args.makebias is not None:
+    makebias = args.makebias
+if args.makeflats is not None:
+    makeflats = args.makeflats
+if args.makearcs is not None:
+    makearcs = args.makearcs
+if args.makestd is not None:
+    makestd = args.makestd
+if args.makesci is not None:
+    makesci = args.makesci
+
+print(f"makebias={makebias}, makeflats={makeflats}, makearcs={makearcs}, makestd={makestd}, makesci={makesci}")
+
+
 #this will be print to the directory in which you are working
 logutils.config(file_name='gmosls_tutorial.log')
 
@@ -23,12 +56,6 @@ dataroot = '/Users/grudnick/Code/Dragons/Tutorials/gmosls_tutorial'
 
 from recipe_system import cal_service
 
-#set up which parts of the script to execute
-makebias = False
-makeflats = False
-makearcs = False
-makestd = False
-makesci = True
 
 
 caldb = cal_service.set_local_database()
@@ -49,6 +76,10 @@ print(all_files)
 #The syntax for select_data is
 #select_data(inputs, tags=[], xtags=[], expression='True')
 #where tags and xtags are tags to include or exclude respectively.
+print('#############################################')
+print('collect file names')
+print('#############################################')
+
 all_biases = dataselect.select_data(all_files, ['BIAS'])
 
 for bias in all_biases:
@@ -111,6 +142,9 @@ for bpm in dataselect.select_data(all_files, ['BPM']):
 
 #make master bias from full frames and standard frames
 if makebias:
+    print('#############################################')
+    print('make master bias')
+    print('#############################################')
     reduce_biasstd = Reduce()
     reduce_biasstd.files.extend(biasstd)
     reduce_biasstd.runr()
@@ -118,6 +152,12 @@ if makebias:
     reduce_biassci = Reduce()
     reduce_biassci.files.extend(biassci)
     reduce_biassci.runr()
+else:
+    print('#############################################')
+    print('Skipping master bias construction')
+    print('#############################################')
+
+
 
 #reduce master flat fields
 #GMOS longslit flat fields are normally obtained at night along with
@@ -130,6 +170,9 @@ if makebias:
 #in this case, a master bias, the best match will be obtained
 #automatically from the local calibration manager.
 if makeflats:
+    print('#############################################')
+    print('make master biasflats')
+    print('#############################################')
 
     reduce_flats = Reduce()
     reduce_flats.files.extend(flats)
@@ -139,20 +182,36 @@ if makeflats:
     #run interactively
     #reduce_flats.uparms = dict([('interactive', True)])
     reduce_flats.runr()
+else:
+    print('#############################################')
+    print('Skipping master flat construction')
+    print('#############################################')
 
 #reduce arcs.  As for spectroscopic flats, these images are not stacked
 if makearcs:
+    print('#############################################')
+    print('make arcs and determine wavelength solution')
+    print('#############################################')
     reduce_arcs = Reduce()
     reduce_arcs.files.extend(arcs)
 
     #comment out to not run interactively
     #reduce_arcs.uparms = dict([('interactive', True)])
     reduce_arcs.runr()
+else:
+    print('#############################################')
+    print('Skipping arc procession and wavelength solution determination')
+    print('#############################################')
+    
 
 #sensitivity functiion.  This is performed at only one spectroscopic
 #dither as it has been found that differences of ~10nm does not
 #significantly affect spectrophotometric calibration
 if makestd:
+    print('#############################################')
+    print('reduce standard and calculate sensitivity correction')
+    print('#############################################')
+
     reduce_std = Reduce()
     reduce_std.files.extend(stdstar)
 
@@ -174,12 +233,19 @@ if makestd:
     plt.ioff()
     plotting.dgsplot_matplotlib(ad, 1)
     plt.ion()
+else:
+    print('#############################################')
+    print('skip making sensitivity correction')
+    print('#############################################')
 
 
 #reduce science images.
 #This makes a 2-D spectrum and an extracted 1D spectrum.  The 1D
 #spectrum is flux calibrated with the sensitivity function
 if makesci:
+    print('#############################################')
+    print('reduce science images')
+    print('#############################################')
     reduce_science = Reduce()
     reduce_science.files.extend(scitarget)
     reduce_science.runr()
@@ -195,3 +261,7 @@ if makesci:
     plt.ioff()
     plotting.dgsplot_matplotlib(ad, 1)
     plt.ion()
+else:
+    print('#############################################')
+    print('skip reducing science images')
+    print('#############################################')
