@@ -13,26 +13,21 @@ def gem_reduce(args, all_files):
     import matplotlib.pyplot as plt
 
 
-    if args.makebias is not None:
-        makebias = args.makebias
-    if args.makeflats is not None:
-        makeflats = args.makeflats
-    if args.makearcs is not None:
-        makearcs = args.makearcs
-    if args.makestd is not None:
-        makestd = args.makestd
-    if args.makesci is not None:
-        makesci = args.makesci
-    if args.interactive is not None:
-        interactive = args.interactive
-    if args.makesci is not None:
-        plotspec = args.plotspec
+    #initialize variables that govern which parts of the script to execute
+
+    makebias = args.makebias
+    makeflats = args.makeflats
+    makearcs = args.makearcs
+    makestd = args.makestd
+    makesci = args.makesci
+    interactive = args.interactive
+    plotspec = args.plotspec
 
     print(f"makebias={makebias}, makeflats={makeflats}, makearcs={makearcs}, makestd={makestd}, makesci={makesci}, interactive={interactive}, plotspec={plotspec}")
 
 
     #this will be print to the directory in which you are working
-    logutils.config(file_name='gmosls_tutorial.log')
+    logutils.config(file_name='gmosls_2025B.log')
 
 
     #set up calibration services You can manually add processed
@@ -42,8 +37,6 @@ def gem_reduce(args, all_files):
     # disk.)
 
     from recipe_system import cal_service
-
-
 
     caldb = cal_service.set_local_database()
 
@@ -71,7 +64,7 @@ def gem_reduce(args, all_files):
         ad = astrodata.open(bias)
         print(bias, '  ', ad.detector_roi_setting())
 
-    #No split up the biases into full frame and the central spectrum
+    #Now split up the biases into full frame and the central spectrum
     biasstd = dataselect.select_data(
         all_files,
         ['BIAS'],
@@ -268,76 +261,49 @@ if __name__ == "__main__":
     import glob
 
 
-    ##########If I want to, I need to figure out how to include this
-    ##########as a help output using the parser
-    helpstr = """\
-    This is a reduction script using Dragons for longslit spectra\n
-    
-    Gregory Rudnick
+     #Code description - formatted to work with -h command line argument
 
-    6-Oct-2025
-    DESCRIPTION"""
+    helpstr = '\
+    This is a reduction script using Dragons for longslit spectra\n\
+    Gregory Rudnick\n\
+    24-Oct-2025\n\n\
+    DESCRIPTION\n\n\
+    Python reduction script using reduce class.  Works on Dragons tutorial data.\n\n\
+    COMMAND LINE PARAMETERS\n\n\
+    makebias:  default=False; make master bias\n\n\
+    makeflats: default=False; make flatfields\n\n\
+    makearcs:  default=False; reduce arcs and determine wavelength solution\n\n\
+    makestd:   default=False; reduce standard and make sensitivity correction\n\n\
+    makesci:   default=False; reduce science frames and extract 1D spectrum\n\n\
+    interactive default=False; perform all reductions interactively\n\n\
+    plotspec   default=False; plot spectra\n\n\
+    INPUT\n\n\
+    You need to specify the path \'dataroot\' that locates the input data.\n\n\
+    EXAMPLE USAGE\n\n\
+    python dragons_tutorial.py --makebias False --makeflats True\n\n\
+    OUTPUT\n\n\
+    Reduced data will be deposited in execution directory'
 
-    '''
-    Python reduction script using reduce class.  Works on Dragons tutorial
-    data.
-
-    COMMAND LINE PARAMETERS
-
-    makebias:  default=True; make master bias
-
-    makeflats: default=True; make flatfields
-
-    makearcs:  default=True; reduce arcs and determine wavelength solution
-
-    makestd:   default=True; reduce standard and make sensitivity correction
-
-    makesci:   default=True; reduce science frames and extract 1D spectrum
-
-    interactive default=True; perform all reductions interactively
-
-    plotspec   default=True; plot spectra
-
-    INPUT
-
-    You need to specify the path 'dataroot' that locates the input data.
-
-    EXAMPLE USAGE
-
-    python dragons_tutorial.py --makebias False --makeflats True
-
-    OUTPUT
-
-    Reduced data will be deposited in execution directory
-    '''
 
     # This needs to be set to the root for the data. 
     dataroot = '/Users/grudnick/Code/Dragons/Tutorials/gmosls_tutorial'
     all_files = glob.glob(dataroot + '/playdata/example1/*.fits')
 
-    #initialize variables that govern which parts of the script to execute
-    makebias = True
-    makeflats = True
-    makearcs = True
-    makestd = True
-    makesci = True
-    interactive = True
-    plotspec = True
-
+    #print out help output
     parser = argparse.ArgumentParser(
-    description="""\
-    This is a reduction script using Dragons for longslit spectra
-     """
+    description=helpstr,
+    formatter_class=argparse.RawTextHelpFormatter
     )
-   #parse command line options
 
-    parser.add_argument("--makebias", help="default=True; make master bias")
-    parser.add_argument("--makeflats", help="default=True; make flatfields")
-    parser.add_argument("--makearcs", help="default=True; reduce arcs and determine wavelength solution")
-    parser.add_argument("--makestd", help="default=True; reduce standard and make sensitivity correction")
-    parser.add_argument("--makesci", help="default=True; reduce science frames and extract 1D spectrum")
-    parser.add_argument("--interactive", help="default=True; perform all reductions interactively")
-    parser.add_argument("--plotspec", help="default=True; plot spectra")
+    #parse command line options
+    #this stores the input as a boolean and the default is False
+    parser.add_argument("--makebias", action="store_true", default=False, help="default=False; make master bias")
+    parser.add_argument("--makeflats", action="store_true", default=False, help="default=False; make flatfields")
+    parser.add_argument("--makearcs", action="store_true", default=False, help="default=False; reduce arcs and determine wavelength solution")
+    parser.add_argument("--makestd", action="store_true", default=False, help="default=False; reduce standard and make sensitivity correction")
+    parser.add_argument("--makesci", action="store_true", default=False, help="default=False; reduce science frames and extract 1D spectrum")
+    parser.add_argument("--interactive", action="store_true", default=False, help="default=False; perform all reductions interactively")
+    parser.add_argument("--plotspec", action="store_true", default=False, help="default=False; plot spectra")
 
 
     args = parser.parse_args()
